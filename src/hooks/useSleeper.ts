@@ -24,9 +24,11 @@ export function useSleeperPlayers() {
           .filter(
             p =>
               skill.includes(p.position) &&
-              p.active !== false &&
+              p.active === true &&
+              p.team != null &&
+              p.status !== 'Inactive' &&
               p.search_rank != null &&
-              p.search_rank < 1500,
+              p.search_rank < 600,
           )
           .map(p => ({
             id: p.player_id,
