@@ -28,7 +28,8 @@ export function useSleeperPlayers() {
               p.team != null &&
               p.status !== 'Inactive' &&
               p.search_rank != null &&
-              p.search_rank < 600,
+              // QBs rank much higher on Sleeper (superflex influence); allow more
+              (p.position === 'QB' ? p.search_rank < 1200 : p.search_rank < 600),
           )
           .map(p => ({
             id: p.player_id,
@@ -48,8 +49,22 @@ export function useSleeperPlayers() {
           }))
           .sort((a, b) => a.rank - b.rank)
 
+        // Sleeper search_rank overvalues QBs because their platform is
+        // predominantly superflex/2QB. Reassign QB ADP to 1QB PPR values:
+        // QB1 ≈ pick 35, each subsequent QB spaced ~11 picks apart.
+        const qbs    = parsed.filter(p => p.position === 'QB')
+        const nonQbs = parsed.filter(p => p.position !== 'QB')
+        const correctedQbs = qbs.map((qb, i) => ({
+          ...qb,
+          adp:       35 + i * 11,
+          sleeperAdp: qb.rank,  // keep raw rank for reference
+        }))
+        const ordered = [...nonQbs, ...correctedQbs]
+          .sort((a, b) => a.adp - b.adp)
+          .map((p, i) => ({ ...p, rank: i + 1, tier: calculateTier(i + 1, p.position) }))
+
         if (!cancelled) {
-          setPlayers(parsed)
+          setPlayers(ordered)
           setSource('sleeper')
         }
       } catch {
