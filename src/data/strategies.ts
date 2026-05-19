@@ -50,24 +50,24 @@ export const STRATEGIES: Strategy[] = [
   },
   {
     id: 'late-qb',
-    label: 'Late QB (R8+)',
-    description: 'Avoid spending an early pick on QB. Punt the position and use that value on skill players.',
-    winRate: 51,
+    label: 'Late QB (R9+)',
+    description: 'Wait until round 9+ for QB in 1-QB leagues. The position is deep — this is the optimal strategy, freeing early picks for scarce RB/WR.',
+    winRate: 55,
     color: 'bg-purple-500',
     detect: (picks) => {
       const qbPick = picks.findIndex(p => p.position === 'QB')
-      return qbPick === -1 ? picks.length < 7 : qbPick >= 7
+      return qbPick === -1 ? picks.length < 8 : qbPick >= 8
     },
   },
   {
     id: 'early-qb',
-    label: 'Early QB (R4–7)',
-    description: 'Lock in a top-3 QB and let them carry weeks while building depth elsewhere.',
-    winRate: 40,
+    label: 'Early QB (R4–8)',
+    description: 'Draft QB before round 9 in a 1-QB league. Sacrifices a skill pick for minor positional edge — the QB pool is too deep to justify it.',
+    winRate: 34,
     color: 'bg-yellow-500',
     detect: (picks) => {
       const qbPick = picks.findIndex(p => p.position === 'QB')
-      return qbPick >= 3 && qbPick <= 6
+      return qbPick >= 3 && qbPick <= 7
     },
   },
   {

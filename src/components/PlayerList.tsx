@@ -21,12 +21,11 @@ const TIER_DOT: Record<number, string> = {
 interface Props {
   players: Player[]
   currentRound: number
-  onDraft: (player: Player) => void
 }
 
 const POSITIONS = ['ALL', 'QB', 'RB', 'WR', 'TE', 'K', 'DEF'] as const
 
-export default function PlayerList({ players, currentRound, onDraft }: Props) {
+export default function PlayerList({ players, currentRound }: Props) {
   const [search, setSearch] = useState('')
   const [posFilter, setPosFilter] = useState<string>('ALL')
 
@@ -82,13 +81,12 @@ export default function PlayerList({ players, currentRound, onDraft }: Props) {
         {visible.length === 0 ? (
           <div className="text-center text-gray-600 text-sm py-8">No players found</div>
         ) : (
-          visible.map((player, idx) => (
+          visible.map((player) => (
             <PlayerRow
               key={player.id}
               player={player}
               globalRank={players.indexOf(player) + 1}
               currentRound={currentRound}
-              onDraft={onDraft}
             />
           ))
         )}
@@ -105,21 +103,18 @@ function PlayerRow({
   player,
   globalRank,
   currentRound,
-  onDraft,
 }: {
   player: Player
   globalRank: number
   currentRound: number
-  onDraft: (p: Player) => void
 }) {
-  const isValue = player.adp > currentRound * 1.2   // flagging if they're falling
+  const isValue = player.adp > currentRound * 1.2
   const colorClass = POS_COLORS[player.position] ?? POS_COLORS.K
   const tierDot = TIER_DOT[player.tier] ?? 'bg-gray-700'
 
   return (
-    <button
-      onClick={() => onDraft(player)}
-      className="w-full grid grid-cols-[2rem_1fr_3rem_3rem_4rem] gap-2 items-center px-3 py-2.5 hover:bg-gray-800/60 transition-colors border-b border-gray-800/40 text-left group"
+    <div
+      className="w-full grid grid-cols-[2rem_1fr_3rem_3rem_4rem] gap-2 items-center px-3 py-2.5 border-b border-gray-800/40"
     >
       {/* Rank */}
       <span className="text-xs text-gray-500 tabular-nums">{globalRank}</span>
@@ -152,6 +147,6 @@ function PlayerRow({
       <span className={`text-xs tabular-nums text-right ${isValue ? 'text-green-400 font-semibold' : 'text-gray-400'}`}>
         {player.adp.toFixed(1)}
       </span>
-    </button>
+    </div>
   )
 }

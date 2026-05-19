@@ -65,22 +65,21 @@ export function getRecommendations(
   const teCount = myPicks.filter(p => p.position === 'TE').length
   const recs: Recommendation[] = []
 
-  // ── Rounds 1-2: BPA from RB/WR ──────────────────────────────────────────────
+  // ── Rounds 1-2: BPA RB/WR only — QB has zero value here in 1-QB ─────────────
   if (round <= 2) {
-    const targets = available.filter(p => p.position === 'RB' || p.position === 'WR').slice(0, 6)
     recs.push({
       priority: 'must',
       label: 'Best Player Available',
-      reason: 'Rounds 1-2 are all about talent. Grab the best RB or WR on the board.',
+      reason: 'Rounds 1-2: RB/WR only. In 1-QB leagues QB provides no early-round edge — the position is too deep.',
       positions: ['RB', 'WR'],
-      players: targets,
+      players: available.filter(p => p.position === 'RB' || p.position === 'WR').slice(0, 6),
     })
     const eliteTE = available.find(p => p.position === 'TE' && p.adp <= 25)
     if (eliteTE && teCount === 0) {
       recs.push({
         priority: 'value',
-        label: 'Elite TE Value',
-        reason: `${eliteTE.name} is elite and creates a season-long positional advantage.`,
+        label: 'Elite TE Exception',
+        reason: `${eliteTE.name} is rare enough to consider — a season-long positional advantage at TE.`,
         positions: ['TE'],
         players: [eliteTE],
       })
@@ -93,8 +92,8 @@ export function getRecommendations(
     if (rbCount < 2) {
       recs.push({
         priority: 'must',
-        label: 'Lock In Your RB2',
-        reason: 'RB depth wins leagues. Secure your second early before the pool dries up.',
+        label: 'Lock In RB2',
+        reason: 'RB is the scarcest position. Secure your second before the pool dries up — you can always find a QB late.',
         positions: ['RB'],
         players: topAvailable(available, 'RB', 5),
       })
@@ -102,8 +101,8 @@ export function getRecommendations(
     if (wrCount < 2) {
       recs.push({
         priority: 'must',
-        label: 'Lock In Your WR2',
-        reason: 'Two reliable WRs in the first 5 rounds gives you a weekly floor.',
+        label: 'Lock In WR2',
+        reason: 'Two reliable WRs in rounds 1-5 gives you a floor every week.',
         positions: ['WR'],
         players: topAvailable(available, 'WR', 5),
       })
@@ -114,18 +113,18 @@ export function getRecommendations(
         recs.push({
           priority: rbCount >= 2 && wrCount >= 2 ? 'must' : 'high',
           label: 'Grab TE Value Now',
-          reason: 'TE is the scarce position. Top options disappear fast after round 4.',
+          reason: 'TE dries up fast. Top streamers go rounds 4-6 — waiting too long leaves you streaming weekly.',
           positions: ['TE'],
           players: topAvailable(available, 'TE', 4),
         })
       }
     }
-    // BPA fallback if all positions filled
+    // Don't recommend QB in rounds 3-5 in 1-QB leagues — it's a waste
     if (recs.length === 0) {
       recs.push({
         priority: 'high',
         label: 'Best Available RB/WR',
-        reason: 'Your core is set — add depth or grab the best value on the board.',
+        reason: 'Core is set — stack more depth at RB/WR before targeting QB or TE.',
         positions: ['RB', 'WR'],
         players: available.filter(p => p.position === 'RB' || p.position === 'WR').slice(0, 5),
       })
@@ -133,61 +132,62 @@ export function getRecommendations(
     return recs
   }
 
-  // ── Rounds 6-8 ──────────────────────────────────────────────────────────────
+  // ── Rounds 6-8: TE must-fill window, QB starts becoming relevant ─────────────
   if (round <= 8) {
     if (teCount === 0) {
       recs.push({
         priority: 'must',
         label: 'Must-Fill: TE',
-        reason: "You've waited long on TE. The top streamers go fast — grab one here.",
+        reason: "Waiting past round 8 for TE means streaming all season. Lock in a starter now.",
         positions: ['TE'],
         players: topAvailable(available, 'TE', 4),
       })
     }
-    if (qbCount === 0) {
-      const topQB = available.find(p => p.position === 'QB')
-      if (topQB && topQB.adp <= 80) {
-        recs.push({
-          priority: 'high',
-          label: 'QB Value Window',
-          reason: `Top QBs fall here. ${topQB.name} offers elite upside at a discount.`,
-          positions: ['QB'],
-          players: topAvailable(available, 'QB', 3),
-        })
-      }
-    }
     recs.push({
-      priority: teCount > 0 && qbCount > 0 ? 'must' : 'value',
+      priority: teCount > 0 ? 'must' : 'high',
       label: 'WR Depth & Upside',
-      reason: 'Round 6-8 is the best WR value window. Target high-upside WR3s.',
+      reason: 'Rounds 6-8 are the sweet spot for WR3 upside. Best value window before QB run.',
       positions: ['WR'],
       players: topAvailable(available, 'WR', 5),
     })
+    // Only flag QB here if a clear elite option is available — otherwise wait
+    if (qbCount === 0) {
+      const topQB = available.find(p => p.position === 'QB')
+      if (topQB && topQB.adp <= 70) {
+        recs.push({
+          priority: 'value',
+          label: 'Elite QB Falling',
+          reason: `${topQB.name} is elite value here. Otherwise, wait — QB depth is strong in 1-QB leagues.`,
+          positions: ['QB'],
+          players: topAvailable(available, 'QB', 2),
+        })
+      }
+    }
     return recs
   }
 
-  // ── Rounds 9-11 ─────────────────────────────────────────────────────────────
+  // ── Rounds 9-11: QB window, RB handcuffs ─────────────────────────────────────
   if (round <= 11) {
     if (qbCount === 0) {
       recs.push({
         priority: 'must',
-        label: 'QB — Grab One Now',
-        reason: "Waiting past round 10 for QB leaves you with streamers. Lock in a starter.",
+        label: 'QB — Target Now',
+        reason: "1-QB leagues: rounds 9-11 are optimal. You get a starter without sacrificing early skill picks.",
         positions: ['QB'],
         players: topAvailable(available, 'QB', 4),
       })
     }
     recs.push({
       priority: 'high',
-      label: 'RB Handcuffs & Upside',
-      reason: 'Handcuff your starter. A backup in good situation can be the week-winner.',
+      label: 'RB Handcuffs',
+      reason: 'Handcuff your RB1 — injuries are inevitable and a clear backup is free equity.',
       positions: ['RB'],
       players: topAvailable(available, 'RB', 4),
     })
     recs.push({
       priority: 'value',
       label: 'WR Lottery Tickets',
-      reason: 'High-ceiling WRs with upside for breakout weeks.',
+      reason: 'High-upside WRs in good offenses with a path to targets.',
       positions: ['WR'],
       players: topAvailable(available, 'WR', 4),
     })
@@ -196,11 +196,11 @@ export function getRecommendations(
 
   // ── Rounds 12-13 ────────────────────────────────────────────────────────────
   if (round <= 13) {
-    if (qbCount < 2) {
+    if (qbCount === 0) {
       recs.push({
-        priority: 'high',
-        label: 'Streaming QB',
-        reason: 'A second QB gives you weekly streaming flexibility.',
+        priority: 'must',
+        label: 'QB — Last Call',
+        reason: "Don't enter the season without a QB. Grab a streamer now.",
         positions: ['QB'],
         players: topAvailable(available, 'QB', 3),
       })
@@ -208,7 +208,7 @@ export function getRecommendations(
     recs.push({
       priority: 'must',
       label: 'DEF — Lock in Value',
-      reason: 'Top defenses spike in value. Take a top-8 D/ST now.',
+      reason: 'Top defenses crater in value if you wait. Grab a top-8 D/ST here.',
       positions: ['DEF'],
       players: topAvailable(available, 'DEF', 4),
     })
@@ -243,10 +243,10 @@ export function getRecommendations(
 // ── Roster display helpers ───────────────────────────────────────────────────
 
 export const ROSTER_SLOTS: { pos: string; label: string; count: number }[] = [
-  { pos: 'QB', label: 'QB', count: 2 },
+  { pos: 'QB', label: 'QB', count: 1 },
   { pos: 'RB', label: 'RB', count: 4 },
   { pos: 'WR', label: 'WR', count: 4 },
-  { pos: 'TE', label: 'TE', count: 2 },
+  { pos: 'TE', label: 'TE', count: 1 },
   { pos: 'DEF', label: 'D/ST', count: 1 },
   { pos: 'K', label: 'K', count: 1 },
 ]
