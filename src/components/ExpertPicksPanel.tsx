@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import type { Player } from '../types'
 import type { ExpertData } from '../hooks/useExpertRankings'
+import VORPChart from './VORPChart'
 
 const POS_TEXT: Record<string, string> = {
   QB: 'text-red-400', RB: 'text-green-400',
@@ -16,10 +17,9 @@ const POS_BG: Record<string, string> = {
 const POS_BAR: Record<string, string> = {
   RB: 'bg-green-500', WR: 'bg-blue-500', QB: 'bg-red-500', TE: 'bg-yellow-500',
 }
-// Approximate full-roster starting counts for board-depth bars
-const POS_START: Record<string, number> = { RB: 65, WR: 90, QB: 32, TE: 30 }
 
 interface Props {
+  allPlayers: Player[]
   availablePlayers: Player[]
   myPicks: Player[]
   currentRound: number
@@ -28,6 +28,7 @@ interface Props {
 }
 
 export default function ExpertPicksPanel({
+  allPlayers,
   availablePlayers,
   myPicks,
   currentRound,
@@ -70,15 +71,6 @@ export default function ExpertPicksPanel({
     }
     return alerts.slice(0, 2)
   }, [availablePlayers])
-
-  // Board depth
-  const depth = useMemo(() =>
-    ['RB', 'WR', 'TE', 'QB'].map(pos => ({
-      pos,
-      count: availablePlayers.filter(p => p.position === pos).length,
-    })),
-    [availablePlayers],
-  )
 
   // If we have projections, build a sorted list for top proj. picks
   const projTargets = useMemo(() => {
@@ -202,33 +194,10 @@ export default function ExpertPicksPanel({
         </div>
       )}
 
-      {/* ── Board Depth ─────────────────────────────────────────────────────── */}
-      <div className="space-y-2 border-t border-gray-800 pt-3">
-        <div className="text-[11px] font-semibold text-gray-400">Board Depth</div>
-        {depth.map(({ pos, count }) => {
-          const pct = Math.min(100, (count / POS_START[pos]) * 100)
-          const low = pct < 25
-          const mid = pct < 55
-          return (
-            <div key={pos} className="flex items-center gap-2">
-              <span className={`text-[10px] w-5 font-semibold ${POS_TEXT[pos]}`}>{pos}</span>
-              <div className="flex-1 h-2 bg-gray-800 rounded-full overflow-hidden">
-                <div
-                  className={`h-full rounded-full transition-all ${
-                    low ? 'bg-red-500' : mid ? 'bg-yellow-500' : POS_BAR[pos]
-                  }`}
-                  style={{ width: `${pct}%` }}
-                />
-              </div>
-              <span className={`text-[10px] w-5 text-right tabular-nums ${
-                low ? 'text-red-400' : mid ? 'text-yellow-400' : 'text-gray-500'
-              }`}>{count}</span>
-            </div>
-          )
-        })}
-        <p className="text-[9px] text-gray-700 leading-tight pt-1">
-          Depth bar turns yellow/red as position pool thins.
-        </p>
+      {/* ── VORP Chart ──────────────────────────────────────────────────────── */}
+      <div className="border-t border-gray-800 pt-3">
+        <div className="text-[11px] font-semibold text-gray-400 mb-2">VORP by Position</div>
+        <VORPChart allPlayers={allPlayers} availablePlayers={availablePlayers} />
       </div>
 
       {/* ── My Roster Needs ─────────────────────────────────────────────────── */}

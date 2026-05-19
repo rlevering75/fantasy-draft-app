@@ -256,6 +256,7 @@ export default function App() {
         {/* Expert Picks */}
         <div className="w-56 flex-shrink-0 border-l border-gray-800 overflow-y-auto">
           <ExpertPicksPanel
+            allPlayers={rawPlayers}
             availablePlayers={availablePlayers}
             myPicks={myPicks}
             currentRound={currentRound}
