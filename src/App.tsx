@@ -3,6 +3,7 @@ import type { Player, DraftPick, DraftSettings, SleeperPick } from './types'
 import { useSleeperPlayers, useSleeperDraft } from './hooks/useSleeper'
 import { useExpertRankings } from './hooks/useExpertRankings'
 import { useESPNADP } from './hooks/useESPNADP'
+import { useFantasyProsECR } from './hooks/useFantasyProsECR'
 import { getRecommendations, buildPick, isMyPick, getRound, getTeamSlot } from './utils/draft'
 
 import SetupScreen from './components/SetupScreen'
@@ -12,9 +13,11 @@ import RoundGuide from './components/RoundGuide'
 import WinRatePanel from './components/WinRatePanel'
 import SleeperPanel from './components/SleeperPanel'
 import ExpertPicksPanel from './components/ExpertPicksPanel'
+import ComparePanel from './components/ComparePanel'
 
 export default function App() {
   const [phase, setPhase] = useState<'setup' | 'draft'>('setup')
+  const [centerTab, setCenterTab] = useState<'players' | 'compare'>('players')
   const [settings, setSettings] = useState<DraftSettings>({
     teamCount: 10,
     rounds: 15,
@@ -27,6 +30,7 @@ export default function App() {
   const { players: sleeperPlayers, loading: playersLoading, source } = useSleeperPlayers()
   const expertData = useExpertRankings()
   const { adpByName: espnAdpByName, loaded: espnLoaded, success: espnSuccess } = useESPNADP()
+  const fpEcr = useFantasyProsECR()
 
   // Blend Sleeper + ESPN ADP into a single consensus ADP, stored on each player
   const rawPlayers = useMemo(() => {
@@ -46,6 +50,8 @@ export default function App() {
     () => rawPlayers.filter(p => !draftedIds.has(p.id)),
     [rawPlayers, draftedIds],
   )
+
+  const availableIds = useMemo(() => new Set(availablePlayers.map(p => p.id)), [availablePlayers])
 
   const myPicks = useMemo(
     () => allPicks.filter(p => p.isMyPick).map(p => p.player),
@@ -234,18 +240,46 @@ export default function App() {
           <MyTeam myPicks={myPicks} onUndo={undoLastPick} canUndo={allPicks.length > 0 && !sleeperConnected} />
         </div>
 
-        {/* Center: Available Players */}
+        {/* Center: Available Players / Compare */}
         <div className="flex-1 flex flex-col overflow-hidden">
           <div className="px-3 py-2 border-b border-gray-800 flex items-center justify-between flex-shrink-0">
-            <h2 className="text-sm font-semibold text-gray-300">Available Players</h2>
+            <div className="flex gap-1">
+              <button
+                onClick={() => setCenterTab('players')}
+                className={`text-xs px-2.5 py-1 rounded-md font-medium transition-colors ${
+                  centerTab === 'players' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-gray-200'
+                }`}
+              >
+                Players
+              </button>
+              <button
+                onClick={() => setCenterTab('compare')}
+                className={`text-xs px-2.5 py-1 rounded-md font-medium transition-colors ${
+                  centerTab === 'compare' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-gray-200'
+                }`}
+              >
+                Compare
+              </button>
+            </div>
             <span className="text-xs text-gray-500">{availablePlayers.length} remaining</span>
           </div>
           <div className="flex-1 overflow-hidden">
-            <PlayerList
-              players={availablePlayers}
-              currentRound={currentRound}
-              onDraft={draftPlayer}
-            />
+            {centerTab === 'players' ? (
+              <PlayerList
+                players={availablePlayers}
+                currentRound={currentRound}
+                onDraft={draftPlayer}
+              />
+            ) : (
+              <ComparePanel
+                allPlayers={rawPlayers}
+                availableIds={availableIds}
+                currentRound={currentRound}
+                expertData={expertData}
+                espnAdpByName={espnSuccess ? espnAdpByName : null}
+                fpEcr={fpEcr}
+              />
+            )}
           </div>
 
           {/* Recent picks ticker */}
