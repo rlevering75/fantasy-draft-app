@@ -6,7 +6,9 @@ export interface Player {
   name: string
   position: Position
   team: string
-  adp: number   // half-ppr adp; lower = earlier pick
+  adp: number          // consensus ADP (avg of available sources); lower = earlier pick
+  sleeperAdp?: number  // Sleeper search_rank
+  espnAdp?: number     // ESPN mock-draft averageDraftPosition
   rank: number
   bye: number
   tier: number

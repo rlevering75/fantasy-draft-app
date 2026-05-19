@@ -2,6 +2,7 @@ import { useState, useMemo, useCallback } from 'react'
 import type { Player, DraftPick, DraftSettings, SleeperPick } from './types'
 import { useSleeperPlayers, useSleeperDraft } from './hooks/useSleeper'
 import { useExpertRankings } from './hooks/useExpertRankings'
+import { useESPNADP } from './hooks/useESPNADP'
 import { getRecommendations, buildPick, isMyPick, getRound, getTeamSlot } from './utils/draft'
 
 import SetupScreen from './components/SetupScreen'
@@ -23,8 +24,20 @@ export default function App() {
   const [allPicks, setAllPicks] = useState<DraftPick[]>([])
   const [sleeperDraftId, setSleeperDraftId] = useState<string | null>(null)
 
-  const { players: rawPlayers, loading: playersLoading, source } = useSleeperPlayers()
+  const { players: sleeperPlayers, loading: playersLoading, source } = useSleeperPlayers()
   const expertData = useExpertRankings()
+  const { adpByName: espnAdpByName, loaded: espnLoaded, success: espnSuccess } = useESPNADP()
+
+  // Blend Sleeper + ESPN ADP into a single consensus ADP, stored on each player
+  const rawPlayers = useMemo(() => {
+    if (!espnLoaded || !espnSuccess) return sleeperPlayers
+    return sleeperPlayers.map(p => {
+      const espn = espnAdpByName[p.name.toLowerCase().trim()]
+      if (!espn) return p
+      const consensus = Math.round(((p.sleeperAdp ?? p.adp) + espn) / 2 * 10) / 10
+      return { ...p, adp: consensus, espnAdp: espn }
+    })
+  }, [sleeperPlayers, espnAdpByName, espnLoaded, espnSuccess])
 
   // ── Derived state ────────────────────────────────────────────────────────────
   const draftedIds = useMemo(() => new Set(allPicks.map(p => p.player.id)), [allPicks])
@@ -167,7 +180,7 @@ export default function App() {
           <div>
             <h1 className="text-sm font-bold text-white leading-none">Fantasy Draft Assistant</h1>
             <div className="text-xs text-gray-500">
-              1-QB · Full PPR · 12 Teams
+              1-QB · Full PPR · 12 Teams · ADP: {espnSuccess ? 'Sleeper + ESPN' : 'Sleeper'}
             </div>
           </div>
         </div>
@@ -247,6 +260,7 @@ export default function App() {
             myPicks={myPicks}
             currentRound={currentRound}
             expertData={expertData}
+            espnAdpByName={espnSuccess ? espnAdpByName : null}
           />
         </div>
 

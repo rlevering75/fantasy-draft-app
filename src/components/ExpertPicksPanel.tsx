@@ -24,6 +24,7 @@ interface Props {
   myPicks: Player[]
   currentRound: number
   expertData: ExpertData | null
+  espnAdpByName: Record<string, number> | null
 }
 
 export default function ExpertPicksPanel({
@@ -31,6 +32,7 @@ export default function ExpertPicksPanel({
   myPicks,
   currentRound,
   expertData,
+  espnAdpByName,
 }: Props) {
   const skill = useMemo(
     () => availablePlayers.filter(p => ['QB', 'RB', 'WR', 'TE'].includes(p.position)),
@@ -95,9 +97,10 @@ export default function ExpertPicksPanel({
       {/* ── Header ──────────────────────────────────────────────────────────── */}
       <div className="flex items-center justify-between">
         <h3 className="text-xs font-semibold text-gray-200 uppercase tracking-wider">Expert Picks</h3>
-        <span className="text-[10px] text-gray-600">
-          {hasProjData ? expertData!.source : 'Sleeper ADP'}
-        </span>
+        <div className="flex items-center gap-1">
+          <span className="text-[9px] text-green-600 font-semibold">SLR</span>
+          {espnAdpByName && <><span className="text-[9px] text-gray-700">+</span><span className="text-[9px] text-blue-600 font-semibold">ESPN</span></>}
+        </div>
       </div>
 
       {/* ── Tier-drop alerts ─────────────────────────────────────────────────── */}
@@ -117,10 +120,11 @@ export default function ExpertPicksPanel({
           {hasProjData ? 'Top Projected (PPR pts)' : 'Best Available'}
         </div>
         {(hasProjData ? projTargets : topTargets).map((player, i) => {
-          const pr = posRank[player.id] ?? 0
-          const adpRound = player.adp / 12
-          const steal = adpRound - currentRound >= 2
-          const pts = hasProjData ? expertData!.projectedPts[player.id] : null
+          const pr       = posRank[player.id] ?? 0
+          const steal    = player.adp / 12 - currentRound >= 2
+          const pts      = hasProjData ? expertData!.projectedPts[player.id] : null
+          const slrAdp   = player.sleeperAdp ?? player.adp
+          const espnAdp  = espnAdpByName ? espnAdpByName[player.name.toLowerCase().trim()] : null
 
           return (
             <div
@@ -142,7 +146,17 @@ export default function ExpertPicksPanel({
                     {player.position}{pr}
                   </span>
                   <span className="text-[10px] text-gray-600">{player.team}</span>
-                  <span className="text-[10px] text-gray-600">ADP {player.adp.toFixed(1)}</span>
+                </div>
+                {/* Per-source ADP breakdown */}
+                <div className="flex items-center gap-2 mt-0.5">
+                  <span className="text-[9px] text-green-700 font-semibold">SLR</span>
+                  <span className="text-[9px] text-gray-500 tabular-nums">{slrAdp.toFixed(1)}</span>
+                  {espnAdp != null && (
+                    <>
+                      <span className="text-[9px] text-blue-700 font-semibold">ESPN</span>
+                      <span className="text-[9px] text-gray-500 tabular-nums">{espnAdp.toFixed(1)}</span>
+                    </>
+                  )}
                 </div>
               </div>
               {pts != null && (

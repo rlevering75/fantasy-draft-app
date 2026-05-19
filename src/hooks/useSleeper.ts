@@ -39,6 +39,7 @@ export function useSleeperPlayers() {
             position: p.position as Player['position'],
             team: p.team ?? 'FA',
             adp: p.search_rank ?? 999,
+            sleeperAdp: p.search_rank ?? 999,
             rank: p.search_rank ?? 999,
             bye: p.bye_week ?? 0,
             tier: calculateTier(p.search_rank ?? 999, p.position),
