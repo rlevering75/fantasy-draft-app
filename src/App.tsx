@@ -1,6 +1,7 @@
 import { useState, useMemo, useCallback } from 'react'
 import type { Player, DraftPick, DraftSettings, SleeperPick } from './types'
 import { useSleeperPlayers, useSleeperDraft } from './hooks/useSleeper'
+import { useExpertRankings } from './hooks/useExpertRankings'
 import { getRecommendations, buildPick, isMyPick, getRound, getTeamSlot } from './utils/draft'
 
 import SetupScreen from './components/SetupScreen'
@@ -9,6 +10,7 @@ import MyTeam from './components/MyTeam'
 import RoundGuide from './components/RoundGuide'
 import WinRatePanel from './components/WinRatePanel'
 import SleeperPanel from './components/SleeperPanel'
+import ExpertPicksPanel from './components/ExpertPicksPanel'
 
 export default function App() {
   const [phase, setPhase] = useState<'setup' | 'draft'>('setup')
@@ -22,6 +24,7 @@ export default function App() {
   const [sleeperDraftId, setSleeperDraftId] = useState<string | null>(null)
 
   const { players: rawPlayers, loading: playersLoading, source } = useSleeperPlayers()
+  const expertData = useExpertRankings()
 
   // ── Derived state ────────────────────────────────────────────────────────────
   const draftedIds = useMemo(() => new Set(allPicks.map(p => p.player.id)), [allPicks])
@@ -214,7 +217,7 @@ export default function App() {
       {/* ── Main layout ─────────────────────────────────────────────────────── */}
       <div className="flex-1 flex overflow-hidden">
         {/* Left: My Team */}
-        <div className="w-52 flex-shrink-0 border-r border-gray-800 flex flex-col overflow-hidden">
+        <div className="w-48 flex-shrink-0 border-r border-gray-800 flex flex-col overflow-hidden">
           <MyTeam myPicks={myPicks} onUndo={undoLastPick} canUndo={allPicks.length > 0 && !sleeperConnected} />
         </div>
 
@@ -237,8 +240,18 @@ export default function App() {
           )}
         </div>
 
+        {/* Expert Picks */}
+        <div className="w-56 flex-shrink-0 border-l border-gray-800 overflow-y-auto">
+          <ExpertPicksPanel
+            availablePlayers={availablePlayers}
+            myPicks={myPicks}
+            currentRound={currentRound}
+            expertData={expertData}
+          />
+        </div>
+
         {/* Right: Guide + Win Rate + Sleeper */}
-        <div className="w-72 flex-shrink-0 border-l border-gray-800 overflow-y-auto">
+        <div className="w-64 flex-shrink-0 border-l border-gray-800 overflow-y-auto">
           <div className="p-3 space-y-4">
             {/* Round Guide */}
             <section>
