@@ -135,8 +135,8 @@ function PlayerRow({
   const posRankColor = POS_RANK_COLORS[player.position] ?? 'text-gray-400'
   const tierDot = TIER_DOT[player.tier] ?? 'bg-gray-700'
 
-  // Value vs current pick timing (ADP / 12 approximates the round it will be drafted)
-  const adpRound = player.adp / 12
+  // Value vs current pick timing (ADP / 10 approximates the round it will be drafted)
+  const adpRound = player.adp / 10
   const roundDiff = adpRound - currentRound
   const adpClass =
     roundDiff >= 2   ? 'text-green-400 font-bold'   // clear steal — going 2+ rounds later than now

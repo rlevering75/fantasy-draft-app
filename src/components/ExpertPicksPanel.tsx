@@ -55,7 +55,7 @@ export default function ExpertPicksPanel({
   const topTargets = skill.slice(0, 5)
 
   // Steals: ADP implies they go ≥2 full rounds later than current pick
-  const currentOverall = (currentRound - 1) * 12
+  const currentOverall = (currentRound - 1) * 10
   const steals = skill
     .filter(p => p.adp - currentOverall >= 20 && posRank[p.id] <= 15)
     .slice(0, 3)
@@ -113,7 +113,7 @@ export default function ExpertPicksPanel({
         </div>
         {(hasProjData ? projTargets : topTargets).map((player, i) => {
           const pr       = posRank[player.id] ?? 0
-          const steal    = player.adp / 12 - currentRound >= 2
+          const steal    = player.adp / 10 - currentRound >= 2
           const pts      = hasProjData ? expertData!.projectedPts[player.id] : null
           const slrAdp   = player.sleeperAdp ?? player.adp
           const espnAdp  = espnAdpByName ? espnAdpByName[player.name.toLowerCase().trim()] : null
@@ -168,7 +168,7 @@ export default function ExpertPicksPanel({
           <div className="text-[11px] font-semibold text-gray-400">Late-Round Value</div>
           {steals.map(player => {
             const pr = posRank[player.id] ?? 0
-            const projRound = Math.ceil(player.adp / 12)
+            const projRound = Math.ceil(player.adp / 10)
             return (
               <div
                 key={player.id}

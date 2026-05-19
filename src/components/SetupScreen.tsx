@@ -11,7 +11,7 @@ export default function SetupScreen({ onStart, loading, dataSource }: Props) {
   const [myPickPosition, setMyPickPosition] = useState(1)
 
   function handleStart() {
-    onStart({ teamCount: 12, rounds: 15, myPickPosition, scoringFormat: 'ppr' })
+    onStart({ teamCount: 10, rounds: 15, myPickPosition, scoringFormat: 'ppr' })
   }
 
   return (
@@ -20,7 +20,7 @@ export default function SetupScreen({ onStart, loading, dataSource }: Props) {
         <div className="text-center mb-10">
           <div className="text-5xl mb-3">🏈</div>
           <h1 className="text-3xl font-bold text-white">Fantasy Draft Assistant</h1>
-          <p className="text-gray-400 mt-2">1-QB · Full PPR · 12 Teams · 15 Rounds</p>
+          <p className="text-gray-400 mt-2">1-QB · Full PPR · 10 Teams · 15 Rounds</p>
         </div>
 
         {!loading && (
@@ -52,7 +52,7 @@ export default function SetupScreen({ onStart, loading, dataSource }: Props) {
               onChange={e => setMyPickPosition(Number(e.target.value))}
               className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2.5 text-white text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              {Array.from({ length: 12 }, (_, i) => i + 1).map(n => (
+              {Array.from({ length: 10 }, (_, i) => i + 1).map(n => (
                 <option key={n} value={n}>Pick {n}</option>
               ))}
             </select>

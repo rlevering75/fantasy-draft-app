@@ -16,10 +16,10 @@ import ExpertPicksPanel from './components/ExpertPicksPanel'
 export default function App() {
   const [phase, setPhase] = useState<'setup' | 'draft'>('setup')
   const [settings, setSettings] = useState<DraftSettings>({
-    teamCount: 12,
+    teamCount: 10,
     rounds: 15,
     myPickPosition: 1,
-    scoringFormat: 'half-ppr',
+    scoringFormat: 'ppr',
   })
   const [allPicks, setAllPicks] = useState<DraftPick[]>([])
   const [sleeperDraftId, setSleeperDraftId] = useState<string | null>(null)
@@ -180,7 +180,7 @@ export default function App() {
           <div>
             <h1 className="text-sm font-bold text-white leading-none">Fantasy Draft Assistant</h1>
             <div className="text-xs text-gray-500">
-              1-QB · Full PPR · 12 Teams · ADP: {espnSuccess ? 'Sleeper + ESPN' : 'Sleeper'}
+              1-QB · Full PPR · 10 Teams · ADP: {espnSuccess ? 'Sleeper + ESPN' : 'Sleeper'}
             </div>
           </div>
         </div>

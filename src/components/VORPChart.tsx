@@ -5,9 +5,9 @@ import {
 } from 'recharts'
 import type { Player } from '../types'
 
-// Replacement-level positional rank for 12-team 1QB PPR
-// QB13, RB25 (2 starters + flex), WR30 (2-3 starters + flex), TE13
-const REPLACEMENT: Record<string, number> = { QB: 13, RB: 25, WR: 30, TE: 13 }
+// Replacement-level positional rank for 10-team 1QB PPR
+// QB11 (10 starters + 1), RB21 (20 starters + 1 flex), WR22 (20 starters + 2 flex), TE11
+const REPLACEMENT: Record<string, number> = { QB: 11, RB: 21, WR: 22, TE: 11 }
 
 const POS_COLOR: Record<string, string> = {
   QB: '#f87171', RB: '#4ade80', WR: '#60a5fa', TE: '#facc15',
