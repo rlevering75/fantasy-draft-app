@@ -1,6 +1,6 @@
 import type { Player } from '../types'
 
-// 2026 NFL season half-PPR redraft ADP estimates.
+// 2026 NFL season full-PPR 1-QB redraft ADP estimates.
 // Used only when Sleeper API is unavailable. Bye weeks TBD (set to 0).
 export const FALLBACK_PLAYERS: Player[] = [
   // ── ROUND 1 ──────────────────────────────────────────────────────────────────

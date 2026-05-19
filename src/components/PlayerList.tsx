@@ -190,7 +190,7 @@ function PlayerRow({
 
       {/* ADP */}
       <span className={`text-xs tabular-nums text-right ${adpClass}`}>
-        {player.adp.toFixed(0)}
+        {player.adp.toFixed(1)}
       </span>
     </div>
   )

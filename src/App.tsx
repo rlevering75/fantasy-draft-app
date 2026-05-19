@@ -164,7 +164,7 @@ export default function App() {
           <div>
             <h1 className="text-sm font-bold text-white leading-none">Fantasy Draft Assistant</h1>
             <div className="text-xs text-gray-500">
-              {settings.scoringFormat.toUpperCase()} · {settings.teamCount} teams · {settings.rounds} rounds
+              1-QB · Full PPR · 12 Teams
             </div>
           </div>
         </div>
