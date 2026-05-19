@@ -9,6 +9,12 @@ interface Props {
   onConnect: (draftId: string) => void
   onDisconnect: () => void
   pickCount: number
+  loadedOnConnect: number
+}
+
+function parseDraftId(input: string): string {
+  const match = input.match(/(\d{10,})\/?$/)
+  return match ? match[1] : input.trim()
 }
 
 export default function SleeperPanel({
@@ -19,8 +25,9 @@ export default function SleeperPanel({
   onConnect,
   onDisconnect,
   pickCount,
+  loadedOnConnect,
 }: Props) {
-  const [draftId, setDraftId] = useState('')
+  const [draftInput, setDraftInput] = useState('')
   const [expanded, setExpanded] = useState(false)
 
   return (
@@ -43,24 +50,24 @@ export default function SleeperPanel({
           {!connected ? (
             <>
               <p className="text-xs text-gray-500 leading-relaxed">
-                Enter your Sleeper mock draft ID (found in the draft room URL) to sync picks in real time.
-              </p>
-              <p className="text-xs text-gray-600">
-                Example URL: sleeper.com/draft/nfl/<span className="text-blue-400">1234567890</span>
+                Paste your Sleeper mock draft URL or ID. Existing picks load instantly; new picks sync every 2 seconds.
               </p>
               <input
                 type="text"
-                placeholder="Draft ID (e.g. 1234567890)"
-                value={draftId}
-                onChange={e => setDraftId(e.target.value.trim())}
+                placeholder="URL or Draft ID"
+                value={draftInput}
+                onChange={e => setDraftInput(e.target.value)}
                 className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-blue-500"
               />
               {error && (
                 <p className="text-xs text-red-400">{error}</p>
               )}
               <button
-                onClick={() => draftId && onConnect(draftId)}
-                disabled={!draftId || loading}
+                onClick={() => {
+                  const id = parseDraftId(draftInput)
+                  if (id) onConnect(id)
+                }}
+                disabled={!draftInput.trim() || loading}
                 className="w-full py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-lg transition-colors"
               >
                 {loading ? 'Connecting…' : 'Connect'}
@@ -68,6 +75,11 @@ export default function SleeperPanel({
             </>
           ) : (
             <>
+              {loadedOnConnect > 0 && (
+                <div className="text-xs text-blue-400 bg-blue-900/20 rounded-lg px-2.5 py-1.5">
+                  Loaded {loadedOnConnect} existing pick{loadedOnConnect !== 1 ? 's' : ''} on connect
+                </div>
+              )}
               {draftInfo && (
                 <div className="space-y-1 text-xs">
                   <div className="flex justify-between text-gray-400">
@@ -92,7 +104,7 @@ export default function SleeperPanel({
               )}
               <div className="text-xs text-green-400 flex items-center gap-1.5">
                 <span className="animate-pulse">●</span>
-                Polling every 5 seconds
+                Polling every 2 seconds
               </div>
               <button
                 onClick={onDisconnect}

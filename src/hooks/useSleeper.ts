@@ -72,6 +72,7 @@ export interface SleeperDraftState {
   loading: boolean
   error: string | null
   connected: boolean
+  loadedOnConnect: number   // how many picks existed when we first connected
 }
 
 export function useSleeperDraft(
@@ -84,9 +85,14 @@ export function useSleeperDraft(
     loading: false,
     error: null,
     connected: false,
+    loadedOnConnect: 0,
   })
   const knownCount = useRef(0)
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  // Keep a ref to onNewPicks so the poll closure always calls the latest version
+  // without restarting the interval on every parent re-render.
+  const onNewPicksRef = useRef(onNewPicks)
+  useEffect(() => { onNewPicksRef.current = onNewPicks }, [onNewPicks])
 
   const connect = useCallback(async (id: string) => {
     setState(s => ({ ...s, loading: true, error: null }))
@@ -102,11 +108,12 @@ export function useSleeperDraft(
       if (!picksRes.ok) throw new Error(`Couldn't load picks (${picksRes.status}).`)
       const info: SleeperDraftInfo = await infoRes.json()
       const raw = await picksRes.json()
-      // Sleeper returns null for drafts that haven't started yet
       const picks: SleeperPick[] = Array.isArray(raw) ? raw : []
       knownCount.current = picks.length
-      setState({ info, picks, loading: false, error: null, connected: true })
-      onNewPicks(picks)
+      // Set connected state first, then fire picks in a microtask so
+      // React has flushed the state update (and rawPlayers closure is fresh).
+      setState({ info, picks, loading: false, error: null, connected: true, loadedOnConnect: picks.length })
+      setTimeout(() => onNewPicksRef.current(picks), 0)
     } catch (e: unknown) {
       clearTimeout(timer)
       const msg =
@@ -117,9 +124,9 @@ export function useSleeperDraft(
           : 'Failed to connect to Sleeper draft.'
       setState(s => ({ ...s, loading: false, error: msg, connected: false }))
     }
-  }, [onNewPicks])
+  }, [])   // no deps — uses ref for onNewPicks
 
-  // Poll every 5 s for new picks while connected
+  // Poll every 2 s while connected; uses ref so interval never restarts mid-draft
   useEffect(() => {
     if (!draftId || !state.connected) return
     pollRef.current = setInterval(async () => {
@@ -132,19 +139,19 @@ export function useSleeperDraft(
           const newPicks = picks.slice(knownCount.current)
           knownCount.current = picks.length
           setState(s => ({ ...s, picks }))
-          onNewPicks(newPicks)
+          onNewPicksRef.current(newPicks)
         }
       } catch { /* swallow poll errors silently */ }
-    }, 5000)
+    }, 2000)
     return () => {
       if (pollRef.current) clearInterval(pollRef.current)
     }
-  }, [draftId, state.connected, onNewPicks])
+  }, [draftId, state.connected])   // stable — no onNewPicks dep needed
 
   const disconnect = useCallback(() => {
     if (pollRef.current) clearInterval(pollRef.current)
     knownCount.current = 0
-    setState({ info: null, picks: [], loading: false, error: null, connected: false })
+    setState({ info: null, picks: [], loading: false, error: null, connected: false, loadedOnConnect: 0 })
   }, [])
 
   return { ...state, connect, disconnect }

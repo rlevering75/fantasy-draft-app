@@ -124,6 +124,7 @@ export default function App() {
     loading: sleeperLoading,
     error: sleeperError,
     connected: sleeperConnected,
+    loadedOnConnect: sleeperLoadedOnConnect,
     connect: connectSleeper,
     disconnect: disconnectSleeper,
   } = useSleeperDraft(sleeperDraftId, handleSleeperPicks)
@@ -267,6 +268,7 @@ export default function App() {
                   setSleeperDraftId(null)
                 }}
                 pickCount={sleeperPicks.length}
+                loadedOnConnect={sleeperLoadedOnConnect}
               />
             </section>
           </div>
