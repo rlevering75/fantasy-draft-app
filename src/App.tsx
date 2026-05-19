@@ -244,6 +244,7 @@ export default function App() {
             <PlayerList
               players={availablePlayers}
               currentRound={currentRound}
+              onDraft={draftPlayer}
             />
           </div>
 

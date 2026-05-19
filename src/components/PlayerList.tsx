@@ -30,11 +30,12 @@ const TIER_DOT: Record<number, string> = {
 interface Props {
   players: Player[]
   currentRound: number
+  onDraft: (player: Player) => void
 }
 
 const POSITIONS = ['ALL', 'QB', 'RB', 'WR', 'TE', 'K', 'DEF'] as const
 
-export default function PlayerList({ players, currentRound }: Props) {
+export default function PlayerList({ players, currentRound, onDraft }: Props) {
   const [search, setSearch] = useState('')
   const [posFilter, setPosFilter] = useState<string>('ALL')
 
@@ -87,13 +88,14 @@ export default function PlayerList({ players, currentRound }: Props) {
         </div>
       </div>
 
-      {/* Column headers — Rk | Player | Pos | PosRk | ADP */}
-      <div className="grid grid-cols-[1.5rem_1fr_2.5rem_3.5rem_4rem] gap-2 px-3 py-1.5 text-xs text-gray-500 border-b border-gray-800">
+      {/* Column headers — Rk | Player | Pos | PosRk | ADP | Draft */}
+      <div className="grid grid-cols-[1.5rem_1fr_2.5rem_3.5rem_4rem_2rem] gap-2 px-3 py-1.5 text-xs text-gray-500 border-b border-gray-800">
         <span>#</span>
         <span>Player</span>
         <span>Pos</span>
         <span>PosRk</span>
         <span className="text-right">ADP</span>
+        <span></span>
       </div>
 
       {/* Player rows */}
@@ -108,6 +110,7 @@ export default function PlayerList({ players, currentRound }: Props) {
               globalRank={players.indexOf(player) + 1}
               posRank={positionRanks[player.id] ?? 0}
               currentRound={currentRound}
+              onDraft={onDraft}
             />
           ))
         )}
@@ -125,11 +128,13 @@ function PlayerRow({
   globalRank,
   posRank,
   currentRound,
+  onDraft,
 }: {
   player: Player
   globalRank: number
   posRank: number
   currentRound: number
+  onDraft: (player: Player) => void
 }) {
   const colorClass = POS_COLORS[player.position] ?? POS_COLORS.K
   const posRankColor = POS_RANK_COLORS[player.position] ?? 'text-gray-400'
@@ -151,7 +156,7 @@ function PlayerRow({
     : null
 
   return (
-    <div className="w-full grid grid-cols-[1.5rem_1fr_2.5rem_3.5rem_4rem] gap-2 items-center px-3 py-2 border-b border-gray-800/40">
+    <div className="w-full grid grid-cols-[1.5rem_1fr_2.5rem_3.5rem_4rem_2rem] gap-2 items-center px-3 py-2 border-b border-gray-800/40">
       {/* Rank */}
       <span className="text-xs text-gray-600 tabular-nums">{globalRank}</span>
 
@@ -192,6 +197,15 @@ function PlayerRow({
       <span className={`text-xs tabular-nums text-right ${adpClass}`}>
         {player.adp.toFixed(1)}
       </span>
+
+      {/* Draft button */}
+      <button
+        onClick={() => onDraft(player)}
+        className="flex items-center justify-center w-6 h-6 rounded bg-gray-700 hover:bg-blue-600 text-gray-400 hover:text-white transition-colors text-xs font-bold"
+        title={`Draft ${player.name}`}
+      >
+        +
+      </button>
     </div>
   )
 }
