@@ -90,19 +90,31 @@ export function useSleeperDraft(
 
   const connect = useCallback(async (id: string) => {
     setState(s => ({ ...s, loading: true, error: null }))
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), 10_000)
     try {
       const [infoRes, picksRes] = await Promise.all([
-        fetch(`${BASE}/draft/${id}`),
-        fetch(`${BASE}/draft/${id}/picks`),
+        fetch(`${BASE}/draft/${id}`, { signal: controller.signal }),
+        fetch(`${BASE}/draft/${id}/picks`, { signal: controller.signal }),
       ])
-      if (!infoRes.ok || !picksRes.ok) throw new Error('Draft not found. Check the draft ID.')
+      clearTimeout(timer)
+      if (!infoRes.ok) throw new Error(`Draft not found (${infoRes.status}). Check the ID.`)
+      if (!picksRes.ok) throw new Error(`Couldn't load picks (${picksRes.status}).`)
       const info: SleeperDraftInfo = await infoRes.json()
-      const picks: SleeperPick[] = await picksRes.json()
+      const raw = await picksRes.json()
+      // Sleeper returns null for drafts that haven't started yet
+      const picks: SleeperPick[] = Array.isArray(raw) ? raw : []
       knownCount.current = picks.length
       setState({ info, picks, loading: false, error: null, connected: true })
       onNewPicks(picks)
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : 'Failed to connect to Sleeper draft.'
+      clearTimeout(timer)
+      const msg =
+        e instanceof Error
+          ? e.name === 'AbortError'
+            ? 'Connection timed out. Check the draft ID and try again.'
+            : e.message
+          : 'Failed to connect to Sleeper draft.'
       setState(s => ({ ...s, loading: false, error: msg, connected: false }))
     }
   }, [onNewPicks])
@@ -114,7 +126,8 @@ export function useSleeperDraft(
       try {
         const res = await fetch(`${BASE}/draft/${draftId}/picks`)
         if (!res.ok) return
-        const picks: SleeperPick[] = await res.json()
+        const raw = await res.json()
+        const picks: SleeperPick[] = Array.isArray(raw) ? raw : []
         if (picks.length > knownCount.current) {
           const newPicks = picks.slice(knownCount.current)
           knownCount.current = picks.length
