@@ -2,12 +2,21 @@ import { useState, useMemo } from 'react'
 import type { Player } from '../types'
 
 const POS_COLORS: Record<string, string> = {
-  QB: 'bg-red-500/20 text-red-300 border-red-700/40',
-  RB: 'bg-green-500/20 text-green-300 border-green-700/40',
-  WR: 'bg-blue-500/20 text-blue-300 border-blue-700/40',
-  TE: 'bg-yellow-500/20 text-yellow-300 border-yellow-700/40',
-  K:  'bg-gray-500/20 text-gray-300 border-gray-700/40',
-  DEF:'bg-purple-500/20 text-purple-300 border-purple-700/40',
+  QB:  'bg-red-500/20 text-red-300 border-red-700/40',
+  RB:  'bg-green-500/20 text-green-300 border-green-700/40',
+  WR:  'bg-blue-500/20 text-blue-300 border-blue-700/40',
+  TE:  'bg-yellow-500/20 text-yellow-300 border-yellow-700/40',
+  K:   'bg-gray-500/20 text-gray-300 border-gray-700/40',
+  DEF: 'bg-purple-500/20 text-purple-300 border-purple-700/40',
+}
+
+const POS_RANK_COLORS: Record<string, string> = {
+  QB:  'text-red-400',
+  RB:  'text-green-400',
+  WR:  'text-blue-400',
+  TE:  'text-yellow-400',
+  K:   'text-gray-400',
+  DEF: 'text-purple-400',
 }
 
 const TIER_DOT: Record<number, string> = {
@@ -28,6 +37,17 @@ const POSITIONS = ['ALL', 'QB', 'RB', 'WR', 'TE', 'K', 'DEF'] as const
 export default function PlayerList({ players, currentRound }: Props) {
   const [search, setSearch] = useState('')
   const [posFilter, setPosFilter] = useState<string>('ALL')
+
+  // Position rank among still-available players (RB1 = best available RB on the board)
+  const positionRanks = useMemo(() => {
+    const counters: Record<string, number> = {}
+    const ranks: Record<string, number> = {}
+    for (const p of players) {
+      counters[p.position] = (counters[p.position] || 0) + 1
+      ranks[p.id] = counters[p.position]
+    }
+    return ranks
+  }, [players])
 
   const visible = useMemo(() => {
     let list = players
@@ -67,12 +87,12 @@ export default function PlayerList({ players, currentRound }: Props) {
         </div>
       </div>
 
-      {/* Column headers */}
-      <div className="grid grid-cols-[2rem_1fr_3rem_3rem_4rem] gap-2 px-3 py-1.5 text-xs text-gray-500 border-b border-gray-800">
-        <span>Rk</span>
+      {/* Column headers — Rk | Player | Pos | PosRk | ADP */}
+      <div className="grid grid-cols-[1.5rem_1fr_2.5rem_3.5rem_4rem] gap-2 px-3 py-1.5 text-xs text-gray-500 border-b border-gray-800">
+        <span>#</span>
         <span>Player</span>
         <span>Pos</span>
-        <span>Team</span>
+        <span>PosRk</span>
         <span className="text-right">ADP</span>
       </div>
 
@@ -81,11 +101,12 @@ export default function PlayerList({ players, currentRound }: Props) {
         {visible.length === 0 ? (
           <div className="text-center text-gray-600 text-sm py-8">No players found</div>
         ) : (
-          visible.map((player) => (
+          visible.map(player => (
             <PlayerRow
               key={player.id}
               player={player}
               globalRank={players.indexOf(player) + 1}
+              posRank={positionRanks[player.id] ?? 0}
               currentRound={currentRound}
             />
           ))
@@ -102,50 +123,74 @@ export default function PlayerList({ players, currentRound }: Props) {
 function PlayerRow({
   player,
   globalRank,
+  posRank,
   currentRound,
 }: {
   player: Player
   globalRank: number
+  posRank: number
   currentRound: number
 }) {
-  const isValue = player.adp > currentRound * 1.2
   const colorClass = POS_COLORS[player.position] ?? POS_COLORS.K
+  const posRankColor = POS_RANK_COLORS[player.position] ?? 'text-gray-400'
   const tierDot = TIER_DOT[player.tier] ?? 'bg-gray-700'
 
-  return (
-    <div
-      className="w-full grid grid-cols-[2rem_1fr_3rem_3rem_4rem] gap-2 items-center px-3 py-2.5 border-b border-gray-800/40"
-    >
-      {/* Rank */}
-      <span className="text-xs text-gray-500 tabular-nums">{globalRank}</span>
+  // Value vs current pick timing (ADP / 12 approximates the round it will be drafted)
+  const adpRound = player.adp / 12
+  const roundDiff = adpRound - currentRound
+  const adpClass =
+    roundDiff >= 2   ? 'text-green-400 font-bold'   // clear steal — going 2+ rounds later than now
+    : roundDiff >= 1 ? 'text-green-300 font-semibold' // mild value
+    : roundDiff <= -2 ? 'text-orange-400'              // clear reach
+    : 'text-gray-400'
 
-      {/* Name + tier dot */}
-      <div className="flex items-center gap-2 min-w-0">
-        <span className={`w-2 h-2 rounded-full flex-shrink-0 ${tierDot}`} />
+  const valueLabel =
+    roundDiff >= 2   ? '▲ steal'
+    : roundDiff >= 1 ? '▲ val'
+    : roundDiff <= -2 ? '▽ reach'
+    : null
+
+  return (
+    <div className="w-full grid grid-cols-[1.5rem_1fr_2.5rem_3.5rem_4rem] gap-2 items-center px-3 py-2 border-b border-gray-800/40">
+      {/* Rank */}
+      <span className="text-xs text-gray-600 tabular-nums">{globalRank}</span>
+
+      {/* Name + team */}
+      <div className="flex items-center gap-1.5 min-w-0">
+        <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${tierDot}`} />
         <div className="min-w-0">
-          <div className="text-sm font-medium text-white truncate leading-tight">
-            {player.name}
+          <div className="flex items-baseline gap-1.5 min-w-0">
+            <span className="text-sm font-medium text-white truncate leading-tight">
+              {player.name}
+            </span>
             {player.injuryStatus && (
-              <span className="ml-1.5 text-red-400 text-xs">({player.injuryStatus})</span>
+              <span className="text-red-400 text-xs flex-shrink-0">({player.injuryStatus})</span>
             )}
           </div>
-          {player.bye > 0 && (
-            <div className="text-xs text-gray-600">Bye {player.bye}</div>
-          )}
+          <div className="flex items-center gap-1">
+            <span className="text-xs text-gray-600">{player.team}</span>
+            {valueLabel && (
+              <span className={`text-[10px] font-semibold ${roundDiff >= 1 ? 'text-green-500' : 'text-orange-400'}`}>
+                {valueLabel}
+              </span>
+            )}
+          </div>
         </div>
       </div>
 
       {/* Position badge */}
-      <span className={`text-xs font-semibold px-1.5 py-0.5 rounded border text-center ${colorClass}`}>
+      <span className={`text-xs font-semibold px-1 py-0.5 rounded border text-center ${colorClass}`}>
         {player.position}
       </span>
 
-      {/* Team */}
-      <span className="text-xs text-gray-400 text-center">{player.team}</span>
+      {/* Position rank among available players */}
+      <span className={`text-xs font-bold tabular-nums ${posRankColor}`}>
+        {player.position}{posRank}
+      </span>
 
       {/* ADP */}
-      <span className={`text-xs tabular-nums text-right ${isValue ? 'text-green-400 font-semibold' : 'text-gray-400'}`}>
-        {player.adp.toFixed(1)}
+      <span className={`text-xs tabular-nums text-right ${adpClass}`}>
+        {player.adp.toFixed(0)}
       </span>
     </div>
   )
