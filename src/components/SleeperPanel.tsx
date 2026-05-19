@@ -104,7 +104,7 @@ export default function SleeperPanel({
               )}
               <div className="text-xs text-green-400 flex items-center gap-1.5">
                 <span className="animate-pulse">●</span>
-                Polling every 2 seconds
+                Polling every second
               </div>
               <button
                 onClick={onDisconnect}

@@ -142,7 +142,7 @@ export function useSleeperDraft(
           onNewPicksRef.current(newPicks)
         }
       } catch { /* swallow poll errors silently */ }
-    }, 2000)
+    }, 1000)
     return () => {
       if (pollRef.current) clearInterval(pollRef.current)
     }
