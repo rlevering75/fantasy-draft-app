@@ -62,17 +62,45 @@ export default function App() {
   const handleSleeperPicks = useCallback(
     (incomingPicks: SleeperPick[]) => {
       setAllPicks(prev => {
-        const existing = new Set(prev.map(p => p.overallPick))
+        const existingOverall = new Set(prev.map(p => p.overallPick))
+        const existingIds    = new Set(prev.map(p => p.player.id))
         const newPicks: DraftPick[] = []
 
         for (const sp of incomingPicks) {
-          if (existing.has(sp.pick_no)) continue
-          // Match sleeper player_id to our player list
-          const player = rawPlayers.find(p => p.id === sp.player_id)
+          if (existingOverall.has(sp.pick_no)) continue
+
+          // 1. Match by Sleeper player_id (works when players loaded from Sleeper API)
+          let player: Player | undefined = rawPlayers.find(p => p.id === sp.player_id)
+
+          // 2. Name-based fallback (handles fallback player list with different IDs)
+          if (!player && sp.metadata) {
+            const full = `${sp.metadata.first_name} ${sp.metadata.last_name}`.toLowerCase().trim()
+            player = rawPlayers.find(p => p.name.toLowerCase() === full)
+          }
+
+          // 3. Always create a minimal player from pick metadata so the pick is never dropped.
+          //    This handles depth/handcuff players filtered out of our database.
+          if (!player && sp.metadata) {
+            const pos = sp.metadata.position as Player['position']
+            if (['QB', 'RB', 'WR', 'TE', 'K', 'DEF'].includes(pos) && !existingIds.has(sp.player_id)) {
+              player = {
+                id: sp.player_id,
+                name: `${sp.metadata.first_name} ${sp.metadata.last_name}`.trim(),
+                position: pos,
+                team: sp.metadata.team ?? 'UNK',
+                adp: sp.pick_no,
+                rank: sp.pick_no,
+                bye: 0,
+                tier: 5,
+              }
+            }
+          }
+
           if (!player) continue
-          const round = getRound(sp.pick_no, settings.teamCount)
+
+          const round    = getRound(sp.pick_no, settings.teamCount)
           const roundPick = ((sp.pick_no - 1) % settings.teamCount) + 1
-          const teamSlot = getTeamSlot(sp.pick_no, settings.teamCount)
+          const teamSlot  = getTeamSlot(sp.pick_no, settings.teamCount)
           newPicks.push({
             overallPick: sp.pick_no,
             round,

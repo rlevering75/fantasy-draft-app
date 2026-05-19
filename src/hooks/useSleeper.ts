@@ -26,7 +26,7 @@ export function useSleeperPlayers() {
               skill.includes(p.position) &&
               p.active !== false &&
               p.search_rank != null &&
-              p.search_rank < 600,
+              p.search_rank < 1500,
           )
           .map(p => ({
             id: p.player_id,
